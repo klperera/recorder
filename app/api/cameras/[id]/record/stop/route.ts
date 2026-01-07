@@ -6,19 +6,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cameras } from '@/lib/config';
 import { stopRecording } from '@/lib/ffmpeg-manager';
 import { ApiResponse } from '@/lib/types';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ApiResponse>> {
+  const supabase = await createClient();
   try {
     const { id } = await params;
     
-    // Verify camera exists
-    const camera = cameras.find(c => c.id === id);
+   const {data: camera , error: cameraError} = await supabase.from('cameras').select('*').eq('id', id).single();
+    console.log("🚀 ~ POST ~ camera:", camera)
+
+    if (cameraError) {
+      console.error('Error fetching camera:', cameraError);
+    }
     
     if (!camera) {
       return NextResponse.json(

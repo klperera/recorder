@@ -37,8 +37,3 @@ export const appConfig = {
   ffmpegPath: 'ffmpeg',
 };
 
-/**
- * Camera list - dynamically managed
- * Cameras are now stored in browser localStorage and managed through the UI
- */
-export const cameras: any[] = [];

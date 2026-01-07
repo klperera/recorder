@@ -7,31 +7,33 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cameras } from '@/lib/config';
 import { startHlsStream, isStreaming } from '@/lib/ffmpeg-manager';
 import { ApiResponse } from '@/lib/types';
+import {createClient} from '@/lib/supabase/server'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ApiResponse<{ hlsUrl: string }>>> {
+  const supabase = await createClient();
   try {
     const { id } = await params;
     console.log("🚀 ~ POST ~ id:", id)
     
-    // Find camera configuration
-    const camera = cameras.find(c => c.id === id);
-    console.log("🚀 ~ POST ~ camera:", camera)
-    
-    if (!camera) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Camera not found: ${id}`,
-        },
-        { status: 404 }
+   const {data: camera , error: cameraError} = await supabase.from('cameras').select('*').eq('id', id).single();
+   console.log("🚀 ~ POST ~ camera:", camera)
+   if (cameraError) {
+    console.error('Error fetching camera:', cameraError);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Error fetching camera:', ${cameraError.message}`,
+      },
+      { status: 500 }
       );
-    }
+   }
+   
     
     // Check if already streaming
     if (isStreaming(id)) {
