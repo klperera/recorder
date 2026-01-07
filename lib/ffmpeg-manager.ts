@@ -86,11 +86,11 @@ function isFfmpegAvailable(): boolean {
  * -hls_segment_filename  : Pattern for segment filenames
  * <output.m3u8>          : Output playlist file
  */
-export async function startHlsStream(cameraId: string, rtspUrl: string): Promise<boolean> {
+export async function startHlsStream(cameraId: string, rtsp_url: string): Promise<boolean> {
   const key = getProcessKey(cameraId, 'hls');
   
   // Validate RTSP URL
-  if (!rtspUrl) {
+  if (!rtsp_url) {
     console.warn(`[HLS] Missing RTSP URL for ${cameraId}`);
     return false;
   }
@@ -125,7 +125,7 @@ export async function startHlsStream(cameraId: string, rtspUrl: string): Promise
   const ffmpegArgs = [
     // Input options
     '-rtsp_transport', 'tcp',           // Use TCP for RTSP transport
-    '-i', rtspUrl,                       // Input RTSP URL
+    '-i', rtsp_url,                       // Input RTSP URL
     
     // Video codec options
     '-c:v', 'libx264',                   // Transcode to H.264 for browser compatibility
@@ -246,11 +246,11 @@ export async function stopHlsStream(cameraId: string): Promise<boolean> {
  * -movflags +faststart   : Move metadata to start for streaming playback
  * <output.mp4>           : Output MP4 file
  */
-export async function startRecording(cameraId: string, rtspUrl: string): Promise<{ success: boolean; filename?: string }> {
+export async function startRecording(cameraId: string, rtsp_url: string): Promise<{ success: boolean; filename?: string }> {
   const key = getProcessKey(cameraId, 'recording');
   
   // Validate RTSP URL
-  if (!rtspUrl) {
+  if (!rtsp_url) {
     console.warn(`[Recording] Missing RTSP URL for ${cameraId}`);
     return { success: false };
   }
@@ -288,7 +288,7 @@ export async function startRecording(cameraId: string, rtspUrl: string): Promise
   const ffmpegArgs = [
     // Input options
     '-rtsp_transport', 'tcp',           // Use TCP for RTSP transport
-    '-i', rtspUrl,                       // Input RTSP URL
+    '-i', rtsp_url,                       // Input RTSP URL
     
     // Output options - copy streams for best quality
     '-c', 'copy',                        // Copy all streams without re-encoding
