@@ -18,7 +18,6 @@ export async function POST(
   const supabase = await createClient();
   try {
     const { id } = await params;
-    console.log("🚀 ~ POST ~ id:", id)
     
    const {data: camera , error: cameraError} = await supabase.from('cameras').select('*').eq('id', id).single();
    console.log("🚀 ~ POST ~ camera:", camera)
@@ -43,7 +42,7 @@ export async function POST(
         data: { hlsUrl: `/streams/${id}/stream.m3u8` },
       });
     }
-    
+    console.log("🚀 ~ POST ~ camera.rtspUrl:", camera.rtspUrl)
     // Start the HLS stream
     const success = await startHlsStream(id, camera.rtspUrl);
     console.log("🚀 ~ POST ~ success:", success)
