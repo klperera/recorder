@@ -17,9 +17,11 @@ export async function POST(
 ): Promise<NextResponse<ApiResponse<{ hlsUrl: string }>>> {
   try {
     const { id } = await params;
+    console.log("🚀 ~ POST ~ id:", id)
     
     // Find camera configuration
     const camera = cameras.find(c => c.id === id);
+    console.log("🚀 ~ POST ~ camera:", camera)
     
     if (!camera) {
       return NextResponse.json(
@@ -42,6 +44,7 @@ export async function POST(
     
     // Start the HLS stream
     const success = await startHlsStream(id, camera.rtspUrl);
+    console.log("🚀 ~ POST ~ success:", success)
     
     if (success) {
       return NextResponse.json({
