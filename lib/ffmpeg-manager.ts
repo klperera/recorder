@@ -12,6 +12,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
+import os from 'os';
 import path from 'path';
 import { ProcessEntry } from './types';
 import { appConfig } from './config';
@@ -81,8 +82,15 @@ export async function startHlsStream(cameraId: string, rtspUrl: string): Promise
   }
   
   // Ensure HLS output directory exists
-  const hlsOutputDir = path.join(process.cwd(), appConfig.hlsDir, cameraId);
-  await ensureDir(hlsOutputDir);
+  let hlsOutputDir = path.join(process.cwd(), appConfig.hlsDir, cameraId);
+  try {
+    await ensureDir(hlsOutputDir);
+  } catch (err) {
+    console.warn(`[HLS] Failed to create HLS output dir at ${hlsOutputDir}, falling back to temp dir:`, (err as Error).message);
+    // fallback to OS temp directory which is writable in many hosting environments
+    hlsOutputDir = path.join(os.tmpdir(), 'vapr', 'streams', cameraId);
+    await ensureDir(hlsOutputDir);
+  }
   
   const playlistPath = path.join(hlsOutputDir, 'stream.m3u8');
   const segmentPattern = path.join(hlsOutputDir, 'segment%03d.ts');
@@ -223,8 +231,14 @@ export async function startRecording(cameraId: string, rtspUrl: string): Promise
   }
   
   // Ensure recording output directory exists
-  const recordingDir = path.join(process.cwd(), appConfig.recordingsDir, cameraId);
-  await ensureDir(recordingDir);
+  let recordingDir = path.join(process.cwd(), appConfig.recordingsDir, cameraId);
+  try {
+    await ensureDir(recordingDir);
+  } catch (err) {
+    console.warn(`[Recording] Failed to create recording dir at ${recordingDir}, falling back to temp dir:`, (err as Error).message);
+    recordingDir = path.join(os.tmpdir(), 'vapr', 'recordings', cameraId);
+    await ensureDir(recordingDir);
+  }
   
   const filename = generateRecordingFilename();
   const outputPath = path.join(recordingDir, filename);
