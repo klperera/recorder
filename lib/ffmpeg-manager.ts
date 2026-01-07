@@ -9,7 +9,7 @@
  * Processes are cleaned up on stop or when the server restarts.
  */
 
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, spawnSync, ChildProcess } from 'child_process';
 import { mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import os from 'os';
@@ -51,6 +51,20 @@ function getProcessKey(cameraId: string, type: 'hls' | 'recording'): string {
 }
 
 /**
+ * Check whether the configured ffmpeg binary is available.
+ * Returns true when `ffmpeg -version` runs successfully.
+ */
+function isFfmpegAvailable(): boolean {
+  try {
+    const res = spawnSync(appConfig.ffmpegPath, ['-version']);
+    // spawnSync returns a status code; 0 indicates success
+    return res.status === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Start HLS streaming for a camera
  * 
  * This spawns an FFmpeg process that:
@@ -75,6 +89,18 @@ function getProcessKey(cameraId: string, type: 'hls' | 'recording'): string {
 export async function startHlsStream(cameraId: string, rtspUrl: string): Promise<boolean> {
   const key = getProcessKey(cameraId, 'hls');
   
+  // Validate RTSP URL
+  if (!rtspUrl) {
+    console.warn(`[HLS] Missing RTSP URL for ${cameraId}`);
+    return false;
+  }
+
+  // Check if ffmpeg is available
+  if (!isFfmpegAvailable()) {
+    console.error('[HLS] FFmpeg not available. Set appConfig.ffmpegPath to a valid executable path.');
+    return false;
+  }
+
   // Check if already streaming
   if (activeProcesses.has(key)) {
     console.log(`[HLS] Stream already active for ${cameraId}`);
@@ -141,6 +167,9 @@ export async function startHlsStream(cameraId: string, rtspUrl: string): Promise
   
   ffmpegProcess.on('error', (err) => {
     console.error(`[HLS ${cameraId}] Process error:`, err.message);
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      console.error(`[HLS ${cameraId}] FFmpeg executable not found at '${appConfig.ffmpegPath}'. Update appConfig.ffmpegPath to the full path to ffmpeg.`);
+    }
     activeProcesses.delete(key);
   });
   
@@ -220,6 +249,18 @@ export async function stopHlsStream(cameraId: string): Promise<boolean> {
 export async function startRecording(cameraId: string, rtspUrl: string): Promise<{ success: boolean; filename?: string }> {
   const key = getProcessKey(cameraId, 'recording');
   
+  // Validate RTSP URL
+  if (!rtspUrl) {
+    console.warn(`[Recording] Missing RTSP URL for ${cameraId}`);
+    return { success: false };
+  }
+
+  // Check if ffmpeg is available
+  if (!isFfmpegAvailable()) {
+    console.error('[Recording] FFmpeg not available. Set appConfig.ffmpegPath to a valid executable path.');
+    return { success: false };
+  }
+
   // Check if already recording
   if (activeProcesses.has(key)) {
     const existing = activeProcesses.get(key);
@@ -279,6 +320,9 @@ export async function startRecording(cameraId: string, rtspUrl: string): Promise
   
   ffmpegProcess.on('error', (err) => {
     console.error(`[Recording ${cameraId}] Process error:`, err.message);
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      console.error(`[Recording ${cameraId}] FFmpeg executable not found at '${appConfig.ffmpegPath}'. Update appConfig.ffmpegPath to the full path to ffmpeg.`);
+    }
     activeProcesses.delete(key);
   });
   
