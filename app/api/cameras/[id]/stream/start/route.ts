@@ -42,7 +42,6 @@ export async function POST(
         data: { hlsUrl: `/streams/${id}/stream.m3u8` },
       });
     }
-    console.log("🚀 ~ POST ~ camera.rtspUrl:", camera.rtsp_url)
     // Start the HLS stream
     const success = await startHlsStream(id, camera.rtsp_url);
     console.log("🚀 ~ POST ~ success:", success)
