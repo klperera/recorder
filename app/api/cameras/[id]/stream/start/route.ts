@@ -20,7 +20,6 @@ export async function POST(
     const { id } = await params;
     
    const {data: camera , error: cameraError} = await supabase.from('cameras').select('*').eq('id', id).single();
-   console.log("🚀 ~ POST ~ camera:", camera)
    if (cameraError) {
     console.error('Error fetching camera:', cameraError);
 

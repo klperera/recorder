@@ -125,6 +125,7 @@ export async function startHlsStream(cameraId: string, rtsp_url: string): Promis
   const ffmpegArgs = [
     // Input options
     '-rtsp_transport', 'tcp',           // Use TCP for RTSP transport
+    '-rtsp_flags', 'prefer_tcp',        // Prefer TCP at RTSP protocol level
     '-i', rtsp_url,                       // Input RTSP URL
     
     // Video codec options
@@ -288,6 +289,7 @@ export async function startRecording(cameraId: string, rtsp_url: string): Promis
   const ffmpegArgs = [
     // Input options
     '-rtsp_transport', 'tcp',           // Use TCP for RTSP transport
+    '-rtsp_flags', 'prefer_tcp',        // Prefer TCP at RTSP protocol level
     '-i', rtsp_url,                       // Input RTSP URL
     
     // Output options - copy streams for best quality
