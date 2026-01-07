@@ -2,13 +2,13 @@
  * Video Preview Component
  *
  * A modern video preview container with overlay controls.
- * Inspired by contrastio/recorder's VideoStreams component.
+ * Supports live HLS streaming with status indicators.
  */
 
 "use client";
 
-import { useState } from "react";
-import HlsPlayer from "./HlsPlayer";
+import { useState, useEffect, useRef } from "react";
+import Hls from "hls.js";
 
 interface VideoPreviewProps {
   cameraId: string;
@@ -28,6 +28,29 @@ export default function VideoPreview({
   onClick,
 }: VideoPreviewProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Setup HLS for browsers that don't natively support it
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isStreaming) {
+      const streamUrl = `/streams/${cameraId}/stream.m3u8`;
+
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+        hls.startLoad();
+
+        return () => hls.destroy();
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Safari natively supports HLS
+        video.src = streamUrl;
+      }
+    }
+  }, [cameraId, isStreaming]);
 
   return (
     <div
@@ -43,14 +66,15 @@ export default function VideoPreview({
     >
       {/* Video content */}
       {isStreaming ? (
-        <div className="w-full h-full">
-          <HlsPlayer
-            src={`/streams/${cameraId}/stream.m3u8`}
-            className="w-full h-full object-contain"
-          />
-        </div>
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          controls
+          className="w-full h-full object-cover bg-black"
+        />
       ) : (
-        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-800 to-gray-900">
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-700/50 flex items-center justify-center">
               <svg
@@ -73,7 +97,7 @@ export default function VideoPreview({
       )}
 
       {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
       {/* Camera name label */}
       <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
